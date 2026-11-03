@@ -1,0 +1,12 @@
+{
+  "name": "synonyms_account_status",
+  "hypothesis": "Genie misses informal wording for account status (open/closed, live, dormant).",
+  "patches": [
+    {
+      "op": "update_column_synonyms",
+      "identifier": "sandbox.jg_banking_genie.account",
+      "column_name": "status",
+      "synonyms": ["open/closed", "account status", "live", "dormant"]
+    }
+  ]
+}

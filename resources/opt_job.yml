@@ -1,0 +1,117 @@
+# Parallel-clone optimizer. The bundle eval space is a read-only template.
+# Each lever gets a throwaway Genie space (and optional wrapper-view schema)
+# so experiments can run concurrently without clobbering each other.
+#
+#   databricks bundle run genie_opt_job --params opt_mode=auto,levers='["descriptions","joins"]'
+#   databricks bundle run genie_opt_job --params opt_mode=experiments
+#   databricks bundle run genie_opt_job --params opt_mode=experiments,experiments='["synonyms_account_status"]'
+resources:
+  jobs:
+    genie_opt_job:
+      name: "genie-opt-job"
+      description: >-
+        Baseline-eval the template Genie space, then fan out one throwaway
+        clone per lever. Logs accuracy impact to MLflow + Delta. Never
+        mutates the template space or original source tables/views.
+      tags:
+        app: "genie-evaluator"
+        managed-by: "databricks-bundle"
+      max_concurrent_runs: 10
+      queue:
+        enabled: true
+      parameters:
+        - name: space_id
+          default: ${resources.genie_spaces.eval_space.id}
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: experiment_id
+          default: ${resources.experiments.eval_experiment.id}
+        - name: git_sha
+          default: ""
+        - name: git_branch
+          default: ""
+        - name: triggered_by
+          default: "optimize"
+        - name: levers
+          default: '["descriptions","joins","instructions","sql_snippets","source_copies"]'
+        - name: opt_mode
+          default: "auto"
+        - name: experiments
+          default: ""
+        - name: max_attempts
+          default: "2"
+        - name: target_accuracy
+          default: "0.9"
+        - name: llm_endpoint
+          default: "databricks-meta-llama-3-3-70b-instruct"
+        - name: opt_parent_path
+          default: ""
+        - name: warehouse_id
+          default: ${var.warehouse_id}
+        - name: bundle_root
+          default: ${workspace.file_path}
+      tasks:
+        - task_key: baseline
+          notebook_task:
+            notebook_path: ../jobs/run_optimize_baseline.py
+            base_parameters:
+              space_id: "{{job.parameters.space_id}}"
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+              experiment_id: "{{job.parameters.experiment_id}}"
+              git_sha: "{{job.parameters.git_sha}}"
+              git_branch: "{{job.parameters.git_branch}}"
+              triggered_by: "{{job.parameters.triggered_by}}"
+              levers: "{{job.parameters.levers}}"
+              experiments: "{{job.parameters.experiments}}"
+              opt_mode: "{{job.parameters.opt_mode}}"
+              opt_parent_path: "{{job.parameters.opt_parent_path}}"
+              warehouse_id: "{{job.parameters.warehouse_id}}"
+              bundle_root: "{{job.parameters.bundle_root}}"
+          environment_key: default
+          timeout_seconds: 3600
+          max_retries: 0
+        - task_key: experiments
+          depends_on:
+            - task_key: baseline
+          for_each_task:
+            inputs: "{{tasks.baseline.values.fanout}}"
+            concurrency: 4
+            task:
+              task_key: experiment
+              notebook_task:
+                notebook_path: ../jobs/run_optimize_experiment.py
+                base_parameters:
+                  lever: "{{input}}"
+                  mode: "{{tasks.baseline.values.mode}}"
+                  opt_run_id: "{{tasks.baseline.values.opt_run_id}}"
+                  space_id: "{{job.parameters.space_id}}"
+                  catalog: "{{job.parameters.catalog}}"
+                  schema: "{{job.parameters.schema}}"
+                  experiment_id: "{{job.parameters.experiment_id}}"
+                  git_sha: "{{job.parameters.git_sha}}"
+                  git_branch: "{{job.parameters.git_branch}}"
+                  triggered_by: "{{job.parameters.triggered_by}}"
+                  max_attempts: "{{job.parameters.max_attempts}}"
+                  target_accuracy: "{{job.parameters.target_accuracy}}"
+                  llm_endpoint: "{{job.parameters.llm_endpoint}}"
+                  opt_parent_path: "{{tasks.baseline.values.opt_parent_path}}"
+                  warehouse_id: "{{tasks.baseline.values.warehouse_id}}"
+                  baseline_accuracy: "{{tasks.baseline.values.baseline_accuracy}}"
+                  mlflow_parent_run_id: "{{tasks.baseline.values.mlflow_run_id}}"
+                  bundle_root: "{{job.parameters.bundle_root}}"
+              environment_key: default
+              timeout_seconds: 3600
+              max_retries: 0
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - databricks-sdk>=0.117.0
+              - protobuf>=5,<7
+      permissions:
+        - level: CAN_VIEW
+          group_name: users

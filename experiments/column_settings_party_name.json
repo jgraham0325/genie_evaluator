@@ -1,0 +1,23 @@
+{
+  "name": "column_settings_party_name",
+  "hypothesis": "Party names are typed by users; entity matching and example values should help routing.",
+  "patches": [
+    {
+      "op": "update_column_config",
+      "identifier": "sandbox.jg_banking_genie.client_party",
+      "column_name": "party_name",
+      "description": "Legal name of the individual or entity that holds accounts in a client group.",
+      "synonyms": ["client name", "person name", "entity name"],
+      "enable_entity_matching": true,
+      "enable_format_assistance": true,
+      "get_example_values": true
+    },
+    {
+      "op": "update_column_settings",
+      "identifier": "sandbox.jg_banking_genie.client_party",
+      "column_name": "known_as",
+      "enable_entity_matching": true,
+      "enable_format_assistance": true
+    }
+  ]
+}
