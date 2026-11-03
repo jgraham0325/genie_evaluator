@@ -127,7 +127,7 @@ def default_parent_path(w: Any) -> str:
     user_name = str(getattr(me, "user_name", "") or getattr(me, "userName", "") or "")
     if not user_name:
         raise SpaceError("cannot resolve current user for opt_parent_path")
-    return f"/Users/{user_name}/genie_opt_experiments"
+    return f"/Workspace/Users/{user_name}/genie_opt_experiments"
 
 
 def ensure_parent_path(w: Any, parent_path: str) -> None:

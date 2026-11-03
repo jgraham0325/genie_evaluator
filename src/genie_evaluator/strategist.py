@@ -135,11 +135,26 @@ def parse_proposal(text: str, lever: str, space: dict[str, Any]) -> tuple[str, l
 
 def query_endpoint(w: Any, endpoint: str, prompt: str) -> str:
     """Call a Databricks serving / Foundation Model endpoint and return text."""
+    body = {
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 4000,
+    }
+    client = getattr(w, "api_client", None)
+    if client is not None and hasattr(client, "do"):
+        return _response_text(
+            client.do("POST", f"/serving-endpoints/{endpoint}/invocations", body=body)
+        )
     serving = w.serving_endpoints
     try:
-        response = serving.query(name=endpoint, messages=[{"role": "user", "content": prompt}])
-    except TypeError:
-        response = serving.query(name=endpoint, inputs={"prompt": prompt})
+        from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+
+        response = serving.query(
+            name=endpoint,
+            messages=[ChatMessage(role=ChatMessageRole.USER, content=prompt)],
+            max_tokens=4000,
+        )
+    except Exception:
+        response = serving.query(name=endpoint, prompt=prompt, max_tokens=4000)
     return _response_text(response)
 
 

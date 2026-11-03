@@ -1,0 +1,705 @@
+{
+  "benchmarks": {
+    "questions": [
+      {
+        "answer": [
+          {
+            "content": [
+              "SELECT COUNT(*) AS open_account_count\n",
+              "FROM sandbox.jg_banking_genie.account\n",
+              "WHERE status = 'Open'\n"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000007",
+        "question": [
+          "How many open accounts does the bank currently have?"
+        ]
+      },
+      {
+        "answer": [
+          {
+            "content": [
+              "SELECT g.group_id, g.group_name, g.domicile_country\n",
+              "FROM sandbox.jg_banking_genie.client_group g JOIN sandbox.jg_banking_genie.account a ON a.group_id = g.group_id AND a.status = 'Open'\n",
+              "WHERE g.segment = 'UHNW'\n",
+              "GROUP BY g.group_id, g.group_name, g.domicile_country\n",
+              "HAVING count_if(a.division <> 'Global Wealth Management') = 0\n",
+              "ORDER BY g.group_name"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000006",
+        "question": [
+          "Which UHNW groups bank only with Global Wealth Management?"
+        ]
+      },
+      {
+        "answer": [
+          {
+            "content": [
+              "WITH match AS (SELECT DISTINCT group_id FROM sandbox.jg_banking_genie.find_client('Steiner') WHERE group_name = 'Steiner Family')\n",
+              "SELECT g.group_name, rm.rm_name AS lead_rm_name, rm.division AS rm_division, rm.office AS rm_office,\n",
+              "       (SELECT max(i.interaction_date) FROM sandbox.jg_banking_genie.client_interaction i WHERE i.group_id = g.group_id AND i.channel = 'Meeting') AS last_meeting_date,\n",
+              "       (SELECT max(i.interaction_date) FROM sandbox.jg_banking_genie.client_interaction i WHERE i.group_id = g.group_id) AS last_interaction_any_channel\n",
+              "FROM sandbox.jg_banking_genie.client_group g JOIN match m ON m.group_id = g.group_id\n",
+              "LEFT JOIN sandbox.jg_banking_genie.relationship_manager rm ON rm.rm_id = g.lead_rm_id"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000005",
+        "question": [
+          "Who covers the Steiner Family and when did we last meet them?"
+        ]
+      },
+      {
+        "answer": [
+          {
+            "content": [
+              "SELECT v.group_id, v.group_name, v.segment, v.as_of_date, v.net_position_at_bank_chf\n",
+              "FROM sandbox.jg_banking_genie.v_group_net_position v JOIN sandbox.jg_banking_genie.client_group g ON g.group_id = v.group_id\n",
+              "WHERE g.domicile_country = 'United Arab Emirates' AND v.net_position_at_bank_chf > 10000000\n",
+              "ORDER BY v.net_position_at_bank_chf DESC"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000004",
+        "question": [
+          "Which UAE clients hold more than CHF 10m with us?"
+        ]
+      },
+      {
+        "answer": [
+          {
+            "content": [
+              "WITH match AS (SELECT DISTINCT group_id FROM sandbox.jg_banking_genie.find_client('Steiner') WHERE group_name = 'Steiner Family')\n",
+              "SELECT v.group_name, v.as_of_date, v.assets_at_bank_chf, v.liabilities_at_bank_chf, v.net_position_at_bank_chf,\n",
+              "       v.kyc_estimated_total_wealth_chf AS kyc_declared_estimate_of_total_wealth_not_verified_chf\n",
+              "FROM sandbox.jg_banking_genie.v_group_net_position v JOIN match m ON v.group_id = m.group_id"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000003",
+        "question": [
+          "Total wealth of the Steiner Family"
+        ]
+      },
+      {
+        "answer": [
+          {
+            "content": [
+              "SELECT DISTINCT f.group_id, f.group_name, g.segment, g.domicile_country\n",
+              "FROM sandbox.jg_banking_genie.find_client('Meier') f JOIN sandbox.jg_banking_genie.client_group g ON g.group_id = f.group_id\n",
+              "WHERE f.group_name = 'Meier Family'"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000002",
+        "question": [
+          "Show me the Meier Family"
+        ]
+      },
+      {
+        "answer": [
+          {
+            "content": [
+              "WITH match AS (SELECT group_id FROM sandbox.jg_banking_genie.find_client('Marco Stiner') ORDER BY match_distance LIMIT 1)\n",
+              "SELECT v.group_name, v.as_of_date, v.net_position_at_bank_chf,\n",
+              "       v.kyc_estimated_total_wealth_chf AS kyc_declared_estimate_of_total_wealth_not_verified_chf\n",
+              "FROM sandbox.jg_banking_genie.v_group_net_position v JOIN match m ON v.group_id = m.group_id"
+            ],
+            "format": "SQL"
+          }
+        ],
+        "id": "50000000000000000000000000000001",
+        "question": [
+          "What is Marco Stiner's net worth?"
+        ]
+      }
+    ]
+  },
+  "config": {
+    "sample_questions": [
+      {
+        "id": "10000000000000000000000000000001",
+        "question": [
+          "What is Marco Steiner's net worth with us?"
+        ]
+      },
+      {
+        "id": "10000000000000000000000000000002",
+        "question": [
+          "Top 10 client groups by trailing 12-month revenue"
+        ]
+      },
+      {
+        "id": "10000000000000000000000000000003",
+        "question": [
+          "Groups using more than 80% of their credit limits"
+        ]
+      },
+      {
+        "id": "10000000000000000000000000000004",
+        "question": [
+          "Top-100 clients by assets not contacted in the last 6 months"
+        ]
+      },
+      {
+        "id": "10000000000000000000000000000005",
+        "question": [
+          "Asset allocation of the Steiner Family"
+        ]
+      },
+      {
+        "id": "10000000000000000000000000000006",
+        "question": [
+          "Show me the Huber Family"
+        ]
+      },
+      {
+        "id": "10000000000000000000000000000007",
+        "question": [
+          "Who covers the Huber Family and when did we last meet them?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "column_configs": [
+          {
+            "column_name": "account_type",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          },
+          {
+            "column_name": "booking_centre",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          },
+          {
+            "column_name": "division",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          }
+        ],
+        "identifier": "sandbox.jg_banking_genie.account"
+      },
+      {
+        "column_configs": [
+          {
+            "column_name": "domicile_country",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          },
+          {
+            "column_name": "group_name",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          },
+          {
+            "column_name": "segment",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          }
+        ],
+        "identifier": "sandbox.jg_banking_genie.client_group"
+      },
+      {
+        "column_configs": [
+          {
+            "column_name": "channel",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          },
+          {
+            "column_name": "topic",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          }
+        ],
+        "identifier": "sandbox.jg_banking_genie.client_interaction"
+      },
+      {
+        "column_configs": [
+          {
+            "column_name": "known_as"
+          },
+          {
+            "column_name": "party_name"
+          }
+        ],
+        "identifier": "sandbox.jg_banking_genie.client_party"
+      },
+      {
+        "identifier": "sandbox.jg_banking_genie.credit_facility_monthly"
+      },
+      {
+        "column_configs": [
+          {
+            "column_name": "asset_class",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          }
+        ],
+        "identifier": "sandbox.jg_banking_genie.position_monthly"
+      },
+      {
+        "column_configs": [
+          {
+            "column_name": "rm_name",
+            "enable_entity_matching": true,
+            "enable_format_assistance": true
+          }
+        ],
+        "identifier": "sandbox.jg_banking_genie.relationship_manager"
+      },
+      {
+        "identifier": "sandbox.jg_banking_genie.revenue_monthly"
+      },
+      {
+        "identifier": "sandbox.jg_banking_genie.v_group_net_position"
+      }
+    ]
+  },
+  "instructions": {
+    "example_question_sqls": [
+      {
+        "id": "20000000000000000000000000000001",
+        "question": [
+          "What is Marco Steiner's net worth with us?"
+        ],
+        "sql": [
+          "WITH match AS (SELECT group_id FROM sandbox.jg_banking_genie.find_client('Marco Steiner') ORDER BY match_distance LIMIT 1)\n",
+          "SELECT v.group_id, v.group_name, v.as_of_date, v.net_position_at_bank_chf, v.assets_at_bank_chf, v.liabilities_at_bank_chf,\n",
+          "       v.kyc_estimated_total_wealth_chf AS kyc_declared_estimate_of_total_wealth_not_verified_chf\n",
+          "FROM sandbox.jg_banking_genie.v_group_net_position v JOIN match m ON v.group_id = m.group_id"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000002",
+        "question": [
+          "Top 10 client groups by trailing 12-month revenue"
+        ],
+        "sql": [
+          "SELECT g.group_id, g.group_name, g.segment, round(sum(r.revenue_chf), 2) AS revenue_ttm_chf\n",
+          "FROM sandbox.jg_banking_genie.revenue_monthly r JOIN sandbox.jg_banking_genie.client_group g ON g.group_id = r.group_id\n",
+          "WHERE r.month_end > add_months((SELECT max(month_end) FROM sandbox.jg_banking_genie.revenue_monthly), -12)\n",
+          "GROUP BY g.group_id, g.group_name, g.segment\n",
+          "ORDER BY revenue_ttm_chf DESC LIMIT 10"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000003",
+        "question": [
+          "Groups using more than 80% of their credit limits"
+        ],
+        "sql": [
+          "WITH latest AS (SELECT max(as_of_date) AS d FROM sandbox.jg_banking_genie.credit_facility_monthly)\n",
+          "SELECT g.group_id, g.group_name, g.segment, c.as_of_date,\n",
+          "       sum(c.credit_limit_chf) AS credit_limit_chf, sum(c.drawn_amount_chf) AS drawn_amount_chf,\n",
+          "       round(sum(c.drawn_amount_chf) / sum(c.credit_limit_chf), 4) AS credit_utilisation\n",
+          "FROM sandbox.jg_banking_genie.credit_facility_monthly c\n",
+          "JOIN latest ON c.as_of_date = latest.d\n",
+          "JOIN sandbox.jg_banking_genie.account a ON a.account_id = c.account_id AND a.status = 'Open' AND a.product_category = 'Lending'\n",
+          "JOIN sandbox.jg_banking_genie.client_group g ON g.group_id = c.group_id\n",
+          "GROUP BY g.group_id, g.group_name, g.segment, c.as_of_date\n",
+          "HAVING sum(c.credit_limit_chf) > 0 AND sum(c.drawn_amount_chf) / sum(c.credit_limit_chf) > 0.8\n",
+          "ORDER BY credit_utilisation DESC"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000004",
+        "question": [
+          "Top-100 clients by assets not contacted in the last 6 months"
+        ],
+        "sql": [
+          "WITH top100 AS (\n",
+          "  SELECT group_id, group_name, segment, as_of_date, assets_at_bank_chf\n",
+          "  FROM sandbox.jg_banking_genie.v_group_net_position ORDER BY assets_at_bank_chf DESC LIMIT 100),\n",
+          "last_contact AS (\n",
+          "  SELECT group_id, max(interaction_date) AS last_interaction_date FROM sandbox.jg_banking_genie.client_interaction GROUP BY group_id)\n",
+          "SELECT t.group_id, t.group_name, t.segment, t.as_of_date, t.assets_at_bank_chf, l.last_interaction_date\n",
+          "FROM top100 t LEFT JOIN last_contact l ON l.group_id = t.group_id\n",
+          "WHERE l.last_interaction_date IS NULL OR l.last_interaction_date < add_months(current_date(), -6)\n",
+          "ORDER BY t.assets_at_bank_chf DESC"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000005",
+        "question": [
+          "Asset allocation of the Steiner Family"
+        ],
+        "sql": [
+          "WITH match AS (SELECT DISTINCT group_id FROM sandbox.jg_banking_genie.find_client('Steiner') WHERE group_name = 'Steiner Family'),\n",
+          "latest AS (SELECT max(as_of_date) AS d FROM sandbox.jg_banking_genie.position_monthly)\n",
+          "SELECT p.asset_class, p.as_of_date, round(sum(p.market_value_chf), 2) AS market_value_chf,\n",
+          "       round(sum(p.market_value_chf) / sum(sum(p.market_value_chf)) OVER (), 4) AS share_of_assets\n",
+          "FROM sandbox.jg_banking_genie.position_monthly p JOIN latest ON p.as_of_date = latest.d JOIN match m ON m.group_id = p.group_id\n",
+          "GROUP BY p.asset_class, p.as_of_date\n",
+          "ORDER BY market_value_chf DESC"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000006",
+        "question": [
+          "Show me the Huber Family"
+        ],
+        "sql": [
+          "SELECT DISTINCT f.group_id, f.group_name, g.segment, g.domicile_country\n",
+          "FROM sandbox.jg_banking_genie.find_client('Huber') f JOIN sandbox.jg_banking_genie.client_group g ON g.group_id = f.group_id\n",
+          "WHERE f.group_name = 'Huber Family'"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000007",
+        "question": [
+          "Who covers the Huber Family and when did we last meet them?"
+        ],
+        "sql": [
+          "WITH match AS (SELECT DISTINCT group_id FROM sandbox.jg_banking_genie.find_client('Huber') WHERE group_name = 'Huber Family')\n",
+          "SELECT g.group_id, g.group_name, rm.rm_name AS lead_rm_name, rm.division AS rm_division, rm.office AS rm_office,\n",
+          "       (SELECT max(i.interaction_date) FROM sandbox.jg_banking_genie.client_interaction i WHERE i.group_id = g.group_id AND i.channel = 'Meeting') AS last_meeting_date,\n",
+          "       (SELECT max(i.interaction_date) FROM sandbox.jg_banking_genie.client_interaction i WHERE i.group_id = g.group_id) AS last_interaction_any_channel\n",
+          "FROM sandbox.jg_banking_genie.client_group g JOIN match m ON m.group_id = g.group_id\n",
+          "LEFT JOIN sandbox.jg_banking_genie.relationship_manager rm ON rm.rm_id = g.lead_rm_id"
+        ]
+      }
+    ],
+    "join_specs": [
+      {
+        "comment": [
+          "Account to client group"
+        ],
+        "id": "60000000000000000000000000000001",
+        "instruction": [
+          "Use to roll accounts up to the consolidated client group (segment, domicile, group name)."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.account"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "account.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Account to account holder (party)"
+        ],
+        "id": "60000000000000000000000000000002",
+        "instruction": [
+          "Use only when the question is about the individual or entity holding the account; otherwise aggregate at group level."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.account"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_party"
+        },
+        "sql": [
+          "account.party_id = client_party.party_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Account to account relationship manager"
+        ],
+        "id": "60000000000000000000000000000003",
+        "instruction": [
+          "The RM responsible for a specific account. For who covers a client overall, use the client group lead RM join instead."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.account"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.relationship_manager"
+        },
+        "sql": [
+          "account.rm_id = relationship_manager.rm_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Party to client group"
+        ],
+        "id": "60000000000000000000000000000004",
+        "instruction": [
+          "Each party belongs to exactly one client group."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.client_party"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "client_party.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Client group to lead relationship manager"
+        ],
+        "id": "60000000000000000000000000000005",
+        "instruction": [
+          "Use for 'who covers' / 'who is the RM for' a client group. This is the lead coverage RM, not the per-account RM."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.relationship_manager"
+        },
+        "sql": [
+          "client_group.lead_rm_id = relationship_manager.rm_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Interaction to client group"
+        ],
+        "id": "60000000000000000000000000000006",
+        "instruction": [
+          "Interactions are many per group. To combine with balances or revenue, first aggregate interactions per group (e.g. latest interaction date) and then join, to avoid multiplying rows."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.client_interaction"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "client_interaction.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Interaction to relationship manager"
+        ],
+        "id": "60000000000000000000000000000007",
+        "instruction": [
+          "The RM who had the interaction, which may differ from the group's lead RM."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.client_interaction"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.relationship_manager"
+        },
+        "sql": [
+          "client_interaction.rm_id = relationship_manager.rm_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Position to account"
+        ],
+        "id": "60000000000000000000000000000008",
+        "instruction": [
+          "Monthly snapshot with many holdings per account per month. Restrict to a single as_of_date (normally the latest) before summing market values. Never join positions directly to credit_facility_monthly or revenue_monthly; aggregate each to group or account level first."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.position_monthly"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.account"
+        },
+        "sql": [
+          "position_monthly.account_id = account.account_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Position to client group"
+        ],
+        "id": "60000000000000000000000000000009",
+        "instruction": [
+          "Use for group-level asset totals or allocation. Restrict to one as_of_date before summing; snapshots must not be summed across months."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.position_monthly"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "position_monthly.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Credit facility to account"
+        ],
+        "id": "6000000000000000000000000000000a",
+        "instruction": [
+          "Monthly snapshot, one row per account per month. Restrict to one as_of_date (normally the latest) and apply the Open accounts and Lending accounts filters for utilisation questions."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.credit_facility_monthly"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.account"
+        },
+        "sql": [
+          "credit_facility_monthly.account_id = account.account_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Credit facility to client group"
+        ],
+        "id": "6000000000000000000000000000000b",
+        "instruction": [
+          "Use for group-level limits and drawn amounts at a single as_of_date; do not sum across months."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.credit_facility_monthly"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "credit_facility_monthly.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Revenue to account"
+        ],
+        "id": "6000000000000000000000000000000c",
+        "instruction": [
+          "Revenue is a monthly flow, one row per account per month, and IS summed across months (default trailing 12 months). Use for revenue by division, booking centre or product."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.revenue_monthly"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.account"
+        },
+        "sql": [
+          "revenue_monthly.account_id = account.account_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Revenue to client group"
+        ],
+        "id": "6000000000000000000000000000000d",
+        "instruction": [
+          "Use for revenue by client group or segment. Aggregate revenue per group before combining with snapshot balances."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.revenue_monthly"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "revenue_monthly.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "comment": [
+          "Net position to client group"
+        ],
+        "id": "6000000000000000000000000000000e",
+        "instruction": [
+          "One row per group at the latest snapshot. Use for domicile or other group attributes alongside net position."
+        ],
+        "left": {
+          "identifier": "sandbox.jg_banking_genie.v_group_net_position"
+        },
+        "right": {
+          "identifier": "sandbox.jg_banking_genie.client_group"
+        },
+        "sql": [
+          "v_group_net_position.group_id = client_group.group_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_ONE_TO_ONE--"
+        ]
+      }
+    ],
+    "sql_functions": [
+      {
+        "id": "40000000000000000000000000000001",
+        "identifier": "sandbox.jg_banking_genie.client_360"
+      },
+      {
+        "id": "40000000000000000000000000000002",
+        "identifier": "sandbox.jg_banking_genie.find_client"
+      }
+    ],
+    "sql_snippets": {
+      "filters": [
+        {
+          "display_name": "Meetings only (use for 'meet', 'met', 'last meeting')",
+          "id": "70000000000000000000000000000001",
+          "sql": [
+            "client_interaction.channel = 'Meeting'"
+          ]
+        },
+        {
+          "display_name": "Open accounts only (default for all account, lending and coverage questions)",
+          "id": "70000000000000000000000000000002",
+          "sql": [
+            "account.status = 'Open'"
+          ]
+        },
+        {
+          "display_name": "Lending accounts (use for lending / credit questions)",
+          "id": "70000000000000000000000000000003",
+          "sql": [
+            "account.product_category = 'Lending'"
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "display_name": "Credit utilisation (drawn / limit, as a decimal ratio)",
+          "id": "80000000000000000000000000000001",
+          "sql": [
+            "SUM(credit_facility_monthly.drawn_amount_chf) / NULLIF(SUM(credit_facility_monthly.credit_limit_chf), 0)"
+          ]
+        }
+      ]
+    },
+    "text_instructions": [
+      {
+        "content": [
+          "1. To identify a client, family or company by name, ALWAYS call sandbox.jg_banking_genie.find_client first, then filter by the returned group_id or party_id. Never use LIKE on names. find_client matches person and entity names, NOT group names: for a family or company such as \"Meier Family\" or \"Steiner Family\", call find_client with the core surname only (e.g. 'Meier'), never with the word \"Family\", and keep only the rows whose group_name equals the full group name. Group names are not unique, so if several groups (distinct group_id) are returned, list them all with group_id, group_name, segment and domicile_country and ask which one is meant. If none are returned, say the client was not found. Never guess.\n",
+          "2. \"Net worth\", \"total wealth\", \"wealth with us\", \"total relationship\" or \"how much does X have\" means the net position at the bank from v_group_net_position at the latest as_of_date. Always show assets at bank, liabilities at bank and net position at bank together, plus the as-of date. Show the KYC estimated total wealth separately, labelled \"KYC-declared estimate of total wealth (not verified)\". For a full overview of one client, use sandbox.jg_banking_genie.client_360.\n",
+          "3. When listing client groups, always include group_id, group_name, segment and domicile_country so users can tell same-named groups apart.\n",
+          "4. \"Meet\", \"met\" or \"last meeting\" refers only to in-person meetings: apply the \"Meetings only\" filter. When asked when we last met a client, also show the latest interaction across any channel as a separate column.\n",
+          "5. Only data held at the bank is available. Questions about external wealth (Forbes, other banks, public sources) must be answered with \"not available in this data\".\n",
+          "6. All amounts are in CHF. Use month-end snapshots; \"current\" means the latest as_of_date. Revenue periods default to the trailing 12 months.\n",
+          "7. A client group is the consolidated level (family or corporate group). A party is an individual or entity within it. Aggregate to group level unless the user asks about a person.\n",
+          "8. Apply the \"Open accounts only\" filter to account-based questions by default. For lending questions apply the \"Lending accounts\" filter, and use the \"Credit utilisation\" measure for utilisation."
+        ],
+        "id": "30000000000000000000000000000001"
+      }
+    ]
+  },
+  "version": 2
+}

@@ -1,0 +1,78 @@
+# The single evaluation job. One serverless notebook task:
+#   1. runs eval_space's native benchmark suite through Genie's Eval-Run API
+#   2. logs the run to MLflow (resources.experiments.eval_experiment)
+#   3. appends run + per-question rows to Delta history tables
+#   4. fails closed if accuracy regresses vs. the recorded baseline
+#
+# `databricks bundle run genie_eval_job` blocks until the task finishes and
+# exits non-zero if it raises — this is what makes the job usable directly
+# as a CI gate (see .github/workflows/genie_eval_ci.yml).
+resources:
+  jobs:
+    genie_eval_job:
+      name: "genie-eval-job"
+      description: >-
+        Runs eval_space's benchmark questions through the Genie Eval-Run API,
+        logs the result to MLflow + Delta, and fails if accuracy regresses
+        vs. the recorded baseline_branch accuracy.
+      tags:
+        app: "genie-evaluator"
+        managed-by: "databricks-bundle"
+      max_concurrent_runs: 10
+      queue:
+        enabled: true
+      parameters:
+        - name: space_id
+          default: ${resources.genie_spaces.eval_space.id}
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: experiment_id
+          default: ${resources.experiments.eval_experiment.id}
+        - name: git_sha
+          default: ""
+        - name: git_branch
+          default: ""
+        - name: triggered_by
+          default: ""
+        - name: min_accuracy
+          default: ${var.min_accuracy}
+        - name: max_allowed_regression
+          default: ${var.max_allowed_regression}
+        - name: baseline_branch
+          default: ${var.baseline_branch}
+        - name: bundle_root
+          default: ${workspace.file_path}
+      tasks:
+        - task_key: evaluate
+          notebook_task:
+            notebook_path: ../notebooks/run_eval.py
+            base_parameters:
+              space_id: "{{job.parameters.space_id}}"
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+              experiment_id: "{{job.parameters.experiment_id}}"
+              git_sha: "{{job.parameters.git_sha}}"
+              git_branch: "{{job.parameters.git_branch}}"
+              triggered_by: "{{job.parameters.triggered_by}}"
+              min_accuracy: "{{job.parameters.min_accuracy}}"
+              max_allowed_regression: "{{job.parameters.max_allowed_regression}}"
+              baseline_branch: "{{job.parameters.baseline_branch}}"
+              bundle_root: "{{job.parameters.bundle_root}}"
+          environment_key: default
+          timeout_seconds: 3600
+          max_retries: 0
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - databricks-sdk>=0.117.0
+              # Serverless currently resolves protobuf 7.x, which removed
+              # FieldDescriptor.label. The installed MLflow client still
+              # reads that legacy property while serializing tracking calls.
+              - protobuf>=5,<7
+      permissions:
+        - level: CAN_VIEW
+          group_name: users

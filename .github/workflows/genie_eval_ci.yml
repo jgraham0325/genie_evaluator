@@ -1,0 +1,63 @@
+name: Genie eval
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - uses: databricks/setup-cli@main
+        with:
+          version: 1.21.0
+
+      - name: Evaluate pull request in isolation
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          databricks bundle deploy -t ci \
+            --auto-approve \
+            --var "pr_number=${{ github.event.pull_request.number }}" \
+            --var "warehouse_id=${{ secrets.GENIE_WAREHOUSE_ID }}"
+          databricks bundle run genie_eval_job -t ci \
+            --var "pr_number=${{ github.event.pull_request.number }}" \
+            --var "warehouse_id=${{ secrets.GENIE_WAREHOUSE_ID }}" \
+            --params git_sha="${{ github.sha }}",git_branch="${{ github.head_ref }}",triggered_by=ci
+
+      - name: Record main-branch baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          databricks bundle deploy -t ci \
+            --auto-approve \
+            --var "pr_number=main" \
+            --var "warehouse_id=${{ secrets.GENIE_WAREHOUSE_ID }}"
+          databricks bundle run genie_eval_job -t ci \
+            --var "pr_number=main" \
+            --var "warehouse_id=${{ secrets.GENIE_WAREHOUSE_ID }}" \
+            --params git_sha="${{ github.sha }}",git_branch=main,triggered_by=ci
+
+      - name: Destroy isolated CI resources
+        if: always()
+        run: |
+          set -euo pipefail
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER="main"
+          fi
+          databricks bundle destroy -t ci \
+            --auto-approve \
+            --var "pr_number=${PR_NUMBER}" \
+            --var "warehouse_id=${{ secrets.GENIE_WAREHOUSE_ID }}"

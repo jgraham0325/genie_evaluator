@@ -45,6 +45,8 @@ from genie_evaluator.source_copies import (
 )
 from genie_evaluator.space_io import (
     create_space,
+    default_parent_path,
+    ensure_parent_path,
     get_space,
     trash_space,
     update_serialized_space,
@@ -126,6 +128,9 @@ baseline_accuracy = (
 template = get_space(w, space_id)
 if not warehouse_id:
     warehouse_id = template["warehouse_id"]
+if not opt_parent_path:
+    opt_parent_path = default_parent_path(w)
+ensure_parent_path(w, opt_parent_path)
 
 clone_space_id = ""
 source_plan = None

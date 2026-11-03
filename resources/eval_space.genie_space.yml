@@ -1,0 +1,18 @@
+# Cloned from JG Banking – Client 360 (synthetic data)
+# source space_id: 01f1d45d2bcb13f7a512c2a90a102ded
+# Re-sync from the live space with:
+#   databricks bundle generate genie-space --resource eval_space --force --profile field-eng-east
+resources:
+  genie_spaces:
+    eval_space:
+      title: "JG Banking – Client 360 (eval copy)"
+      description: >-
+        Experimentation copy of JG Banking – Client 360 (synthetic data).
+        Used to measure whether instruction / example-SQL changes improve
+        benchmark accuracy. Edit genie_space/eval_space.geniespace.json,
+        then databricks bundle deploy.
+      warehouse_id: ${var.warehouse_id}
+      file_path: ../genie_space/eval_space.geniespace.json
+      permissions:
+        - level: CAN_RUN
+          group_name: users

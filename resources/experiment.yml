@@ -1,0 +1,14 @@
+# MLflow experiment that records every evaluation run's params/metrics/
+# artifacts (one logged run per `databricks bundle run genie_eval_job`
+# invocation). `mode: development` on the dev target prefixes this with
+# "[dev <user>]" automatically, so each developer gets their own history.
+resources:
+  experiments:
+    eval_experiment:
+      name: ${workspace.file_path}/genie-eval-experiment
+      tags:
+        - key: "app"
+          value: "genie-evaluator"
+      permissions:
+        - level: CAN_READ
+          group_name: users

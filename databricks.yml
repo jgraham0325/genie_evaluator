@@ -1,0 +1,77 @@
+bundle:
+  name: genie_evaluator
+  # genie_spaces resources require the direct deployment engine.
+  engine: direct
+  databricks_cli_version: ">= 1.3.0"
+
+variables:
+  catalog:
+    description: "Unity Catalog catalog for the evaluation history Delta tables"
+  schema:
+    description: "Schema (within catalog) for the evaluation history Delta tables"
+    default: "genie_eval"
+  warehouse_id:
+    description: "SQL warehouse ID the Genie space uses to answer questions"
+  min_accuracy:
+    description: >-
+      Absolute accuracy floor (0-1). The eval job fails if the run's accuracy
+      is below this, regardless of the main-branch baseline.
+    default: "0.0"
+  max_allowed_regression:
+    description: >-
+      Maximum allowed accuracy drop (0-1) versus the recorded baseline_branch
+      accuracy before the eval job fails closed.
+    default: "0.02"
+  baseline_branch:
+    description: "Branch whose latest recorded accuracy is used as the regression baseline"
+    default: "main"
+  pr_number:
+    description: "Pull request number used to scope CI resource names (ci target only)"
+    default: "local"
+
+include:
+  - resources/*.yml
+
+sync:
+  exclude:
+    - tests/**
+    - "*.md"
+
+# ---------------------------------------------------------------------------
+# Targets
+# ---------------------------------------------------------------------------
+# - dev: every developer's personal sandbox. `mode: development` makes the
+#   CLI auto-prefix every resource name with "[dev <username>]" and scope
+#   ownership to the deploying user, so two developers deploying this same
+#   bundle never collide and never see each other's Genie space, job, or
+#   MLflow experiment. This is the isolation mechanism — nothing custom to
+#   build or remember.
+# - ci: one deploy per pull request. `pr_number` (passed via --var from the
+#   GitHub Actions workflow) scopes every resource name so concurrent PRs
+#   don't collide even though they all deploy under the same CI identity.
+#   The workflow destroys this target's resources after the check runs.
+# ---------------------------------------------------------------------------
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-984752964297111.11.azuredatabricks.net
+    variables:
+      catalog: main
+      schema: ${workspace.current_user.short_name}
+      warehouse_id: "148ccb90800933a1"
+
+  ci:
+    mode: production
+    workspace:
+      host: https://adb-984752964297111.11.azuredatabricks.net
+    variables:
+      catalog: main
+      schema: genie_eval
+      warehouse_id: "148ccb90800933a1"
+    presets:
+      name_prefix: "[ci pr-${var.pr_number}] "
+      trigger_pause_status: PAUSED
+      tags:
+        pr_number: ${var.pr_number}
